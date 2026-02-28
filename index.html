@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日好消息 · Daily Good News</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#FFB87A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="每日好消息">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --cream:#FFF9F0;
+    --warm-white:#FFFCF7;
+    --peach:#FFDAB3;
+    --soft-orange:#FFB87A;
+    --blush:#FFD1DC;
+    --lavender:#E8D5F5;
+    --sage:#D4E7D0;
+    --sky:#D6EAF8;
+    --gold:#F5C542;
+    --text-primary:#4A3728;
+    --text-secondary:#7A6455;
+    --text-light:#A8917E;
+    --card-bg:#FFFFFF;
+    --shadow:0 4px 24px rgba(120,80,40,0.08);
+    --shadow-hover:0 8px 40px rgba(120,80,40,0.14);
+    --radius:20px;
+    --radius-sm:12px;
+  }
+  html{scroll-behavior:smooth;font-size:16px}
+  body{
+    font-family:'Noto Serif SC','Quicksand',serif;
+    background:var(--cream);
+    color:var(--text-primary);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ========== FLOATING BACKGROUND ELEMENTS ========== */
+  .bg-canvas{
+    position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  }
+  .cloud{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(60px);
+    opacity:0.35;
+    animation:floatCloud linear infinite;
+  }
+  .cloud-1{width:300px;height:200px;background:var(--peach);top:10%;left:-5%;animation-duration:45s}
+  .cloud-2{width:250px;height:180px;background:var(--blush);top:30%;right:-8%;animation-duration:55s;animation-delay:-10s}
+  .cloud-3{width:350px;height:220px;background:var(--lavender);top:60%;left:10%;animation-duration:50s;animation-delay:-20s}
+  .cloud-4{width:200px;height:160px;background:var(--sage);top:80%;right:15%;animation-duration:60s;animation-delay:-5s}
+  .cloud-5{width:280px;height:190px;background:var(--sky);top:5%;right:30%;animation-duration:48s;animation-delay:-15s}
+  @keyframes floatCloud{
+    0%{transform:translateX(0) translateY(0)}
+    25%{transform:translateX(80px) translateY(-30px)}
+    50%{transform:translateX(40px) translateY(40px)}
+    75%{transform:translateX(-60px) translateY(-20px)}
+    100%{transform:translateX(0) translateY(0)}
+  }
+
+  /* ========== LOADING SCREEN ========== */
+  .loading-screen{
+    position:fixed;inset:0;z-index:9999;
+    background:linear-gradient(135deg,#FFF5E6,#FFE8D6,#FFD6C4);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transition:opacity 0.8s ease,visibility 0.8s ease;
+  }
+  .loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+  .loading-sun{
+    width:80px;height:80px;
+    background:radial-gradient(circle,#FFD93D,#FF9A3C);
+    border-radius:50%;
+    position:relative;
+    animation:pulse 1.5s ease-in-out infinite;
+  }
+  .loading-sun::before{
+    content:'';position:absolute;inset:-15px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(255,217,61,0.3),transparent 70%);
+    animation:glow 1.5s ease-in-out infinite alternate;
+  }
+  .loading-rays{
+    position:absolute;inset:-30px;
+    animation:spin 8s linear infinite;
+  }
+  .loading-rays span{
+    position:absolute;
+    width:3px;height:18px;
+    background:linear-gradient(to bottom,#FFD93D,transparent);
+    border-radius:2px;
+    left:50%;top:0;
+    transform-origin:50% calc(40px + 30px);
+  }
+  .loading-rays span:nth-child(1){transform:rotate(0deg)}
+  .loading-rays span:nth-child(2){transform:rotate(45deg)}
+  .loading-rays span:nth-child(3){transform:rotate(90deg)}
+  .loading-rays span:nth-child(4){transform:rotate(135deg)}
+  .loading-rays span:nth-child(5){transform:rotate(180deg)}
+  .loading-rays span:nth-child(6){transform:rotate(225deg)}
+  .loading-rays span:nth-child(7){transform:rotate(270deg)}
+  .loading-rays span:nth-child(8){transform:rotate(315deg)}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  @keyframes glow{0%{opacity:0.5;transform:scale(1)}100%{opacity:1;transform:scale(1.2)}}
+  @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+  .loading-text{
+    margin-top:32px;
+    font-family:'ZCOOL XiaoWei',serif;
+    font-size:1.2rem;
+    color:var(--text-secondary);
+    letter-spacing:4px;
+    animation:fadeText 2s ease-in-out infinite;
+  }
+  @keyframes fadeText{0%,100%{opacity:0.5}50%{opacity:1}}
+
+  /* ========== MAIN WRAPPER ========== */
+  .main-wrapper{position:relative;z-index:1}
+
+  /* ========== HERO / GREETING ========== */
+  .hero{
+    padding:60px 24px 40px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-bg{
+    position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(255,218,179,0.4) 0%,rgba(255,249,240,0) 100%);
+    z-index:0;
+  }
+  .hero-content{position:relative;z-index:1;max-width:640px;margin:0 auto}
+  .greeting-icon{
+    font-size:3rem;
+    margin-bottom:12px;
+    display:inline-block;
+    animation:wave 2.5s ease-in-out infinite;
+  }
+  @keyframes wave{
+    0%,100%{transform:rotate(0deg)}
+    15%{transform:rotate(14deg)}
+    30%{transform:rotate(-8deg)}
+    40%{transform:rotate(10deg)}
+    50%{transform:rotate(0deg)}
+  }
+  .greeting-text{
+    font-family:'ZCOOL XiaoWei',serif;
+    font-size:clamp(2rem,5vw,3rem);
+    color:var(--text-primary);
+    margin-bottom:8px;
+    line-height:1.3;
+  }
+  .greeting-sub{
+    font-size:0.95rem;
+    color:var(--text-secondary);
+    margin-bottom:20px;
+  }
+  .quote-card{
+    display:inline-block;
+    background:linear-gradient(135deg,rgba(255,255,255,0.85),rgba(255,255,255,0.6));
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,200,150,0.3);
+    border-radius:var(--radius);
+    padding:20px 32px;
+    max-width:520px;
+    position:relative;
+  }
+  .quote-mark{
+    position:absolute;top:-8px;left:16px;
+    font-size:3rem;line-height:1;
+    color:var(--soft-orange);
+    opacity:0.4;
+    font-family:Georgia,serif;
+  }
+  .quote-text{
+    font-size:1.05rem;
+    line-height:1.8;
+    color:var(--text-primary);
+    font-style:italic;
+  }
+  .quote-author{
+    margin-top:8px;
+    font-size:0.82rem;
+    color:var(--text-light);
+  }
+  .date-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    margin-top:20px;
+    background:rgba(255,255,255,0.7);
+    border-radius:30px;
+    padding:8px 20px;
+    font-size:0.85rem;
+    color:var(--text-secondary);
+    border:1px solid rgba(200,170,140,0.2);
+  }
+
+  /* ========== TABS ========== */
+  .tabs-section{
+    max-width:900px;margin:0 auto;padding:0 24px;
+  }
+  .tabs-row{
+    display:flex;gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:32px;
+  }
+  .tab-btn{
+    display:flex;align-items:center;gap:8px;
+    padding:12px 24px;
+    border:2px solid transparent;
+    border-radius:50px;
+    background:rgba(255,255,255,0.7);
+    backdrop-filter:blur(6px);
+    font-family:'Noto Serif SC',serif;
+    font-size:0.95rem;
+    color:var(--text-secondary);
+    cursor:pointer;
+    transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
+    white-space:nowrap;
+  }
+  .tab-btn:hover{
+    background:rgba(255,255,255,0.95);
+    transform:translateY(-2px);
+    box-shadow:var(--shadow);
+  }
+  .tab-btn.active{
+    border-color:var(--soft-orange);
+    background:#fff;
+    color:var(--text-primary);
+    box-shadow:var(--shadow);
+    font-weight:600;
+  }
+  .tab-icon{font-size:1.2rem}
+
+  /* ========== NEWS CARDS ========== */
+  .cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));
+    gap:20px;
+    padding-bottom:40px;
+  }
+  .news-card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    padding:28px;
+    box-shadow:var(--shadow);
+    transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
+    position:relative;
+    overflow:hidden;
+    opacity:0;
+    transform:translateY(20px);
+    animation:cardIn 0.5s ease forwards;
+    border:1px solid rgba(200,170,140,0.1);
+  }
+  .news-card:nth-child(1){animation-delay:0.05s}
+  .news-card:nth-child(2){animation-delay:0.1s}
+  .news-card:nth-child(3){animation-delay:0.15s}
+  .news-card:nth-child(4){animation-delay:0.2s}
+  .news-card:nth-child(5){animation-delay:0.25s}
+  .news-card:nth-child(6){animation-delay:0.3s}
+  .news-card:nth-child(7){animation-delay:0.35s}
+  .news-card:nth-child(8){animation-delay:0.4s}
+  @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+  .news-card:hover{
+    transform:translateY(-6px);
+    box-shadow:var(--shadow-hover);
+  }
+  .news-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:4px;
+    border-radius:var(--radius) var(--radius) 0 0;
+  }
+  .news-card[data-cat="warmth"]::before{background:linear-gradient(90deg,#FF9A9E,#FAD0C4)}
+  .news-card[data-cat="tech"]::before{background:linear-gradient(90deg,#A8C0FF,#3F86ED)}
+  .news-card[data-cat="culture"]::before{background:linear-gradient(90deg,#D4A5FF,#9B59B6)}
+  .card-cat-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:0.75rem;
+    padding:4px 12px;
+    border-radius:20px;
+    margin-bottom:12px;
+    font-weight:600;
+  }
+  .news-card[data-cat="warmth"] .card-cat-badge{background:#FFF0F0;color:#D94F5C}
+  .news-card[data-cat="tech"] .card-cat-badge{background:#EDF2FF;color:#3F6FED}
+  .news-card[data-cat="culture"] .card-cat-badge{background:#F5EDFF;color:#7E3BAB}
+  .card-title{
+    font-size:1.1rem;
+    font-weight:700;
+    line-height:1.6;
+    margin-bottom:10px;
+    color:var(--text-primary);
+  }
+  .card-summary{
+    font-size:0.9rem;
+    line-height:1.75;
+    color:var(--text-secondary);
+    margin-bottom:14px;
+  }
+  .card-comment{
+    background:linear-gradient(135deg,#FFF8F0,#FFF2E8);
+    border-radius:var(--radius-sm);
+    padding:14px 16px;
+    margin-bottom:14px;
+    position:relative;
+  }
+  .card-comment::before{
+    content:'💬';
+    position:absolute;top:-10px;left:12px;
+    font-size:1.1rem;
+  }
+  .card-comment p{
+    font-size:0.85rem;
+    color:var(--text-secondary);
+    line-height:1.7;
+    font-style:italic;
+  }
+  .card-footer{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;
+  }
+  .card-source{
+    font-size:0.78rem;
+    color:var(--text-light);
+    display:flex;align-items:center;gap:4px;
+  }
+  .card-link{
+    font-size:0.82rem;
+    color:var(--soft-orange);
+    text-decoration:none;
+    font-weight:600;
+    padding:6px 14px;
+    border-radius:20px;
+    border:1.5px solid var(--soft-orange);
+    transition:all 0.3s ease;
+    white-space:nowrap;
+  }
+  .card-link:hover{
+    background:var(--soft-orange);
+    color:#fff;
+  }
+
+  /* ========== MOOD WIDGET ========== */
+  .mood-section{
+    max-width:600px;margin:20px auto 40px;padding:0 24px;
+  }
+  .mood-card{
+    background:linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,245,230,0.9));
+    backdrop-filter:blur(10px);
+    border-radius:var(--radius);
+    padding:32px;
+    text-align:center;
+    box-shadow:var(--shadow);
+    border:1px solid rgba(200,170,140,0.15);
+  }
+  .mood-title{
+    font-family:'ZCOOL XiaoWei',serif;
+    font-size:1.3rem;
+    color:var(--text-primary);
+    margin-bottom:6px;
+  }
+  .mood-sub{
+    font-size:0.85rem;
+    color:var(--text-light);
+    margin-bottom:20px;
+  }
+  .mood-options{
+    display:flex;gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .mood-btn{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:14px 18px;
+    border:2px solid transparent;
+    border-radius:16px;
+    background:rgba(255,255,255,0.8);
+    cursor:pointer;
+    transition:all 0.35s ease;
+    min-width:80px;
+  }
+  .mood-btn:hover{
+    transform:translateY(-3px) scale(1.05);
+    box-shadow:0 6px 20px rgba(120,80,40,0.1);
+  }
+  .mood-btn.selected{
+    border-color:var(--gold);
+    background:#FFFBEB;
+    box-shadow:0 4px 16px rgba(245,197,66,0.25);
+  }
+  .mood-emoji{font-size:2rem}
+  .mood-label{font-size:0.78rem;color:var(--text-secondary);font-weight:600}
+  .mood-thanks{
+    margin-top:16px;
+    font-size:0.9rem;
+    color:var(--soft-orange);
+    opacity:0;
+    transition:opacity 0.5s ease;
+    height:24px;
+  }
+  .mood-thanks.show{opacity:1}
+
+  /* ========== REFRESH FAB ========== */
+  .fab-refresh{
+    position:fixed;
+    bottom:32px;right:32px;
+    z-index:100;
+    width:60px;height:60px;
+    border-radius:50%;
+    border:none;
+    background:linear-gradient(135deg,#FFB87A,#FF9A5C);
+    color:#fff;
+    font-size:1.5rem;
+    cursor:pointer;
+    box-shadow:0 6px 24px rgba(255,150,80,0.4);
+    transition:all 0.35s ease;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .fab-refresh:hover{
+    transform:scale(1.1) rotate(30deg);
+    box-shadow:0 8px 32px rgba(255,150,80,0.5);
+  }
+  .fab-refresh:active{transform:scale(0.95)}
+  .fab-refresh.spinning svg{animation:fabSpin 0.8s ease}
+  @keyframes fabSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+  /* ========== FOOTER ========== */
+  .site-footer{
+    text-align:center;
+    padding:40px 24px 60px;
+    font-size:0.8rem;
+    color:var(--text-light);
+    border-top:1px solid rgba(200,170,140,0.15);
+  }
+  .site-footer a{color:var(--soft-orange);text-decoration:none}
+
+  /* ========== RESPONSIVE ========== */
+  @media(max-width:640px){
+    .hero{padding:40px 16px 30px}
+    .quote-card{padding:16px 20px}
+    .tabs-section{padding:0 12px}
+    .tab-btn{padding:10px 16px;font-size:0.85rem}
+    .news-card{padding:20px}
+    .cards-grid{gap:14px}
+    .fab-refresh{width:52px;height:52px;bottom:20px;right:20px;font-size:1.2rem}
+    .mood-btn{min-width:68px;padding:10px 12px}
+    .mood-section{padding:0 12px}
+  }
+
+  /* ========== SCROLL REVEAL ========== */
+  .reveal{opacity:0;transform:translateY(24px);transition:all 0.7s cubic-bezier(0.4,0,0.2,1)}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+
+  /* ========== RSS SOURCE INDICATOR ========== */
+  .source-indicator{
+    text-align:center;
+    padding:8px 16px;
+    font-size:0.75rem;
+    color:var(--text-light);
+    margin-bottom:16px;
+  }
+  .source-dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;
+    vertical-align:middle;
+  }
+  .source-dot.live{background:#6BCB77;animation:dotPulse 2s infinite}
+  .source-dot.cached{background:var(--gold)}
+  @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  /* ========== EMPTY STATE ========== */
+  .empty-state{
+    text-align:center;padding:60px 20px;
+    color:var(--text-light);
+  }
+  .empty-state .empty-icon{font-size:3rem;margin-bottom:12px}
+  .empty-state p{font-size:0.95rem}
+
+  /* ========== NOTIFICATION SETTINGS PANEL ========== */
+  .notif-trigger{
+    position:fixed;top:20px;right:20px;z-index:200;
+    width:48px;height:48px;border-radius:50%;border:none;
+    background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 4px 20px rgba(120,80,40,0.12);
+    cursor:pointer;transition:all 0.3s ease;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.3rem;
+  }
+  .notif-trigger:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(120,80,40,0.18)}
+  .notif-trigger .bell-dot{
+    position:absolute;top:8px;right:8px;
+    width:10px;height:10px;border-radius:50%;
+    background:#FF6B6B;border:2px solid #fff;
+    display:none;
+  }
+  .notif-trigger .bell-dot.active{display:block;animation:dotBlink 2s ease-in-out infinite}
+  @keyframes dotBlink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .notif-panel{
+    position:fixed;top:80px;right:20px;z-index:200;
+    width:340px;max-width:calc(100vw - 32px);
+    background:rgba(255,255,255,0.95);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-radius:var(--radius);
+    box-shadow:0 12px 48px rgba(80,50,20,0.15);
+    border:1px solid rgba(200,170,140,0.2);
+    padding:0;
+    transform:translateY(-12px) scale(0.96);
+    opacity:0;visibility:hidden;
+    transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
+    overflow:hidden;
+  }
+  .notif-panel.open{
+    transform:translateY(0) scale(1);
+    opacity:1;visibility:visible;
+  }
+  .notif-panel-header{
+    padding:20px 24px 16px;
+    border-bottom:1px solid rgba(200,170,140,0.12);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .notif-panel-header h3{
+    font-family:'ZCOOL XiaoWei',serif;
+    font-size:1.1rem;color:var(--text-primary);
+    display:flex;align-items:center;gap:8px;
+  }
+  .notif-close{
+    width:32px;height:32px;border-radius:50%;border:none;
+    background:rgba(200,170,140,0.1);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.1rem;color:var(--text-light);
+    transition:all 0.2s ease;
+  }
+  .notif-close:hover{background:rgba(200,170,140,0.2);color:var(--text-primary)}
+  .notif-panel-body{padding:20px 24px 24px}
+
+  .notif-row{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .notif-row:last-child{margin-bottom:0}
+  .notif-row-label{
+    font-size:0.9rem;color:var(--text-secondary);
+    display:flex;align-items:center;gap:6px;
+  }
+  .notif-row-label .nr-icon{font-size:1.1rem}
+
+  /* Toggle switch */
+  .toggle-wrap{
+    position:relative;width:50px;height:28px;
+  }
+  .toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+  .toggle-track{
+    position:absolute;inset:0;
+    background:#DDD5CC;
+    border-radius:14px;
+    cursor:pointer;
+    transition:background 0.3s ease;
+  }
+  .toggle-track::after{
+    content:'';
+    position:absolute;top:3px;left:3px;
+    width:22px;height:22px;border-radius:50%;
+    background:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .toggle-wrap input:checked + .toggle-track{
+    background:linear-gradient(135deg,#FFB87A,#FF9A5C);
+  }
+  .toggle-wrap input:checked + .toggle-track::after{
+    transform:translateX(22px);
+  }
+
+  /* Time picker */
+  .time-picker{
+    display:flex;align-items:center;gap:4px;
+  }
+  .time-select{
+    padding:6px 10px;
+    border:1.5px solid rgba(200,170,140,0.3);
+    border-radius:10px;
+    background:rgba(255,255,255,0.9);
+    font-family:'Noto Serif SC',serif;
+    font-size:0.88rem;
+    color:var(--text-primary);
+    cursor:pointer;
+    transition:border-color 0.2s ease;
+    -webkit-appearance:none;
+    appearance:none;
+    min-width:60px;
+    text-align:center;
+  }
+  .time-select:focus{outline:none;border-color:var(--soft-orange)}
+  .time-colon{font-weight:700;color:var(--text-light);font-size:1rem}
+
+  /* Permission status */
+  .notif-perm{
+    margin-top:16px;
+    padding:12px 16px;
+    border-radius:var(--radius-sm);
+    font-size:0.8rem;
+    line-height:1.6;
+    display:flex;align-items:flex-start;gap:8px;
+  }
+  .notif-perm.granted{background:#E8F8E8;color:#2D7A2D}
+  .notif-perm.denied{background:#FFEDED;color:#C44}
+  .notif-perm.default{background:#FFF6E6;color:#A67C00}
+  .notif-perm .perm-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+  .notif-perm-btn{
+    display:inline-block;
+    margin-top:8px;
+    padding:6px 16px;
+    border:none;border-radius:20px;
+    background:linear-gradient(135deg,#FFB87A,#FF9A5C);
+    color:#fff;font-size:0.8rem;font-weight:600;
+    cursor:pointer;transition:all 0.2s ease;
+    font-family:'Noto Serif SC',serif;
+  }
+  .notif-perm-btn:hover{transform:scale(1.04);box-shadow:0 3px 12px rgba(255,150,80,0.3)}
+
+  /* History section */
+  .notif-history{
+    margin-top:16px;
+    border-top:1px solid rgba(200,170,140,0.1);
+    padding-top:14px;
+  }
+  .notif-history-title{
+    font-size:0.78rem;color:var(--text-light);
+    text-transform:uppercase;letter-spacing:1px;
+    margin-bottom:10px;
+    font-weight:600;
+  }
+  .notif-history-list{
+    max-height:160px;overflow-y:auto;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .notif-history-list::-webkit-scrollbar{width:4px}
+  .notif-history-list::-webkit-scrollbar-thumb{background:rgba(200,170,140,0.3);border-radius:2px}
+  .notif-history-item{
+    padding:10px 12px;
+    border-radius:10px;
+    background:linear-gradient(135deg,#FFF9F0,#FFF5E8);
+    font-size:0.82rem;
+    line-height:1.5;
+    color:var(--text-secondary);
+  }
+  .notif-history-item .nhi-time{
+    font-size:0.72rem;color:var(--text-light);margin-top:4px;
+  }
+  .notif-history-empty{
+    font-size:0.82rem;color:var(--text-light);
+    text-align:center;padding:12px 0;
+  }
+
+  /* ========== IN-PAGE TOAST NOTIFICATION ========== */
+  .toast-container{
+    position:fixed;top:80px;right:20px;z-index:300;
+    display:flex;flex-direction:column;gap:10px;
+    pointer-events:none;
+    max-width:380px;width:calc(100vw - 40px);
+  }
+  .toast{
+    pointer-events:auto;
+    background:rgba(255,255,255,0.96);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-radius:16px;
+    box-shadow:0 8px 40px rgba(80,50,20,0.15);
+    border:1px solid rgba(255,200,150,0.25);
+    padding:18px 20px;
+    display:flex;gap:14px;align-items:flex-start;
+    transform:translateX(120%);
+    animation:toastIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    position:relative;
+    cursor:pointer;
+  }
+  .toast.leaving{animation:toastOut 0.4s ease forwards}
+  @keyframes toastIn{to{transform:translateX(0)}}
+  @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+  .toast-icon{
+    width:42px;height:42px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.4rem;flex-shrink:0;
+  }
+  .toast-icon.warmth{background:linear-gradient(135deg,#FFE8E0,#FFD1C4)}
+  .toast-icon.tech{background:linear-gradient(135deg,#E0ECFF,#C4D6FF)}
+  .toast-icon.culture{background:linear-gradient(135deg,#F0E4FF,#DCC8FF)}
+  .toast-body{flex:1;min-width:0}
+  .toast-label{
+    font-size:0.72rem;color:var(--text-light);
+    margin-bottom:3px;font-weight:600;
+    letter-spacing:0.5px;
+  }
+  .toast-title{
+    font-size:0.92rem;font-weight:700;
+    color:var(--text-primary);
+    line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .toast-comment{
+    font-size:0.8rem;color:var(--text-secondary);
+    margin-top:4px;font-style:italic;
+    line-height:1.5;
+  }
+  .toast-dismiss{
+    position:absolute;top:8px;right:10px;
+    width:22px;height:22px;border-radius:50%;border:none;
+    background:rgba(200,170,140,0.1);
+    cursor:pointer;font-size:0.7rem;color:var(--text-light);
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.2s ease;
+  }
+  .toast-dismiss:hover{background:rgba(200,170,140,0.2);color:var(--text-primary)}
+  .toast-progress{
+    position:absolute;bottom:0;left:16px;right:16px;height:3px;
+    border-radius:2px;overflow:hidden;
+    background:rgba(200,170,140,0.1);
+  }
+  .toast-progress-bar{
+    height:100%;border-radius:2px;
+    background:linear-gradient(90deg,var(--soft-orange),var(--gold));
+    animation:toastCountdown 8s linear forwards;
+  }
+  @keyframes toastCountdown{from{width:100%}to{width:0%}}
+
+  @media(max-width:640px){
+    .notif-trigger{top:12px;right:12px;width:42px;height:42px;font-size:1.1rem}
+    .notif-panel{top:66px;right:12px;width:calc(100vw - 24px)}
+    .toast-container{top:66px;right:12px;width:calc(100vw - 24px)}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-sun">
+    <div class="loading-rays">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+  <div class="loading-text">正在收集世界的好消息...</div>
+</div>
+
+<!-- BACKGROUND -->
+<div class="bg-canvas">
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="cloud cloud-3"></div>
+  <div class="cloud cloud-4"></div>
+  <div class="cloud cloud-5"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-wrapper">
+
+  <!-- NOTIFICATION TRIGGER -->
+  <button class="notif-trigger" id="notifTrigger" onclick="toggleNotifPanel()" title="通知设置">
+    <span>🔔</span>
+    <span class="bell-dot" id="bellDot"></span>
+  </button>
+
+  <!-- NOTIFICATION SETTINGS PANEL -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3>🔔 通知设置</h3>
+      <button class="notif-close" onclick="toggleNotifPanel()">✕</button>
+    </div>
+    <div class="notif-panel-body">
+      <div class="notif-row">
+        <span class="notif-row-label"><span class="nr-icon">📱</span> 浏览器通知</span>
+        <div class="toggle-wrap">
+          <input type="checkbox" id="toggleBrowser" onchange="handleBrowserToggle(this.checked)">
+          <label class="toggle-track" for="toggleBrowser"></label>
+        </div>
+      </div>
+      <div class="notif-row">
+        <span class="notif-row-label"><span class="nr-icon">💬</span> 页面内通知</span>
+        <div class="toggle-wrap">
+          <input type="checkbox" id="toggleInpage" checked onchange="handleInpageToggle(this.checked)">
+          <label class="toggle-track" for="toggleInpage"></label>
+        </div>
+      </div>
+      <div class="notif-row">
+        <span class="notif-row-label"><span class="nr-icon">⏰</span> 推送时间</span>
+        <div class="time-picker">
+          <select class="time-select" id="notifHour" onchange="saveNotifSettings()">
+            <option value="6">06</option><option value="7">07</option>
+            <option value="8" selected>08</option><option value="9">09</option>
+            <option value="10">10</option><option value="11">11</option>
+            <option value="12">12</option><option value="13">13</option>
+            <option value="14">14</option><option value="15">15</option>
+            <option value="16">16</option><option value="17">17</option>
+            <option value="18">18</option><option value="19">19</option>
+            <option value="20">20</option><option value="21">21</option>
+            <option value="22">22</option>
+          </select>
+          <span class="time-colon">:</span>
+          <select class="time-select" id="notifMin" onchange="saveNotifSettings()">
+            <option value="0" selected>00</option><option value="15">15</option>
+            <option value="30">30</option><option value="45">45</option>
+          </select>
+        </div>
+      </div>
+      <div class="notif-perm default" id="notifPerm">
+        <span class="perm-icon">💡</span>
+        <div>
+          <div id="notifPermText">开启浏览器通知后，即使你不在页面上也能收到好消息提醒。</div>
+          <button class="notif-perm-btn" id="notifPermBtn" onclick="requestNotifPermission()" style="display:none">开启浏览器通知权限</button>
+        </div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="notif-perm-btn" onclick="testNotification()" style="background:linear-gradient(135deg,#A8C0FF,#3F86ED)">🔔 测试通知</button>
+        <button class="notif-perm-btn" id="installBtn" onclick="installPWA()" style="display:none">📱 安装到桌面</button>
+      </div>
+      <div class="notif-history" id="notifHistory">
+        <div class="notif-history-title">最近推送</div>
+        <div class="notif-history-list" id="notifHistoryList">
+          <div class="notif-history-empty">还没有推送记录，明天见 :)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="greeting-icon" id="greetingIcon"></div>
+      <h1 class="greeting-text" id="greetingText"></h1>
+      <p class="greeting-sub" id="greetingSub"></p>
+      <div class="quote-card">
+        <span class="quote-mark">"</span>
+        <p class="quote-text" id="quoteText"></p>
+        <p class="quote-author" id="quoteAuthor"></p>
+      </div>
+      <div class="date-badge" id="dateBadge"></div>
+    </div>
+  </section>
+
+  <!-- TABS + CARDS -->
+  <section class="tabs-section">
+    <div class="tabs-row" id="tabsRow">
+      <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">
+        <span class="tab-icon">✨</span> 全部好消息
+      </button>
+      <button class="tab-btn" data-tab="warmth" onclick="switchTab('warmth')">
+        <span class="tab-icon">🧡</span> 暖心故事
+      </button>
+      <button class="tab-btn" data-tab="tech" onclick="switchTab('tech')">
+        <span class="tab-icon">🚀</span> 科技突破
+      </button>
+      <button class="tab-btn" data-tab="culture" onclick="switchTab('culture')">
+        <span class="tab-icon">🎨</span> 文化艺术
+      </button>
+    </div>
+    <div class="source-indicator" id="sourceIndicator">
+      <span class="source-dot cached"></span> 精选好消息
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </section>
+
+  <!-- MOOD WIDGET -->
+  <section class="mood-section reveal">
+    <div class="mood-card">
+      <h3 class="mood-title">看完好消息，你现在的心情如何？</h3>
+      <p class="mood-sub">记录此刻的感受</p>
+      <div class="mood-options">
+        <button class="mood-btn" onclick="selectMood(this,'开心')">
+          <span class="mood-emoji">😊</span>
+          <span class="mood-label">开心</span>
+        </button>
+        <button class="mood-btn" onclick="selectMood(this,'平静')">
+          <span class="mood-emoji">😌</span>
+          <span class="mood-label">平静</span>
+        </button>
+        <button class="mood-btn" onclick="selectMood(this,'感动')">
+          <span class="mood-emoji">🥹</span>
+          <span class="mood-label">感动</span>
+        </button>
+        <button class="mood-btn" onclick="selectMood(this,'充满希望')">
+          <span class="mood-emoji">🌟</span>
+          <span class="mood-label">充满希望</span>
+        </button>
+      </div>
+      <div class="mood-thanks" id="moodThanks"></div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    每日好消息 · Daily Good News<br>
+    愿好消息治愈每一天 · 数据来源：Good News Network / Positive.News / 综合整理
+  </footer>
+</div>
+
+<!-- REFRESH FAB -->
+<button class="fab-refresh" id="fabRefresh" onclick="refreshNews()" title="刷新好消息">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+  </svg>
+</button>
+
+<script>
+// ===================== DATA =====================
+const allNews = [
+  // ---- 暖心故事 ----
+  {
+    cat: "warmth",
+    title: "比尔·盖茨宣布将捐出99%的财富",
+    summary: "微软创始人比尔·盖茨宣布将通过其基金会，在2045年前捐出预计高达1500亿美元的个人财富，主要用于改善非洲的医疗和教育服务。",
+    source: "综合报道 · 2025",
+    comment: "一个人的慷慨，能照亮整个大陆的未来。",
+    link: "https://www.goodnewsnetwork.org/"
+  },
+  {
+    cat: "warmth",
+    title: "英国健身教练为弱势群体提供免费训练获Pride of Britain奖",
+    summary: "私人教练Javeno McLean每年为数百名老人、残障人士和癌症患者提供免费健身课程，他在曼彻斯特打造了一个包容的运动空间，因此获得了Pride of Britain大奖。",
+    source: "Happiful · 2025",
+    comment: "力量不只在肌肉里，更在善意的行动中。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "warmth",
+    title: "斯蒂芬·弗莱在综艺节目中为心理健康慈善机构赢得25万英镑",
+    summary: "著名演员斯蒂芬·弗莱在《谁想成为百万富翁》名人版中赢得25万英镑，全部捐给心理健康慈善机构Mind，创下该节目名人版最高奖金纪录。",
+    source: "Happiful · 2025",
+    comment: "用智慧赢得的奖金，温暖了无数需要帮助的心灵。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "warmth",
+    title: "退役海军陆战队员完成240天超级铁人三项为慈善筹款",
+    summary: "31岁的英国退役军人Mitch Hutchcraft从英吉利海峡游泳出发，骑行12000公里至印度，跑步900公里至尼泊尔，最后登顶珠穆朗玛峰，全程为退伍军人心理健康慈善机构筹款。",
+    source: "Happiful · 2025",
+    comment: "从海峡到珠峰，每一步都在传递勇气与希望。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "warmth",
+    title: "旧金山金门大桥安装安全网后自杀率降低73%",
+    summary: "金门大桥安装防护安全网并培训员工和志愿者进行危机干预后，一年内自杀事件减少了73%，研究发表在《伤害预防》期刊上。",
+    source: "Injury Prevention · 2025",
+    comment: "一张网，兜住了多少生命的希望。每一个生命都值得被守护。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "warmth",
+    title: "美国谋杀率降至历史最低水平",
+    summary: "2025年可能是自1960年有可靠数据以来美国谋杀率最低的一年，犯罪率整体下降速度创下纪录，标志着社会治安状况的显著改善。",
+    source: "Greater Good · 2025",
+    comment: "数字在下降，安全感在上升。世界正在变得更好。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "warmth",
+    title: "爱尔兰政府将艺术家基本收入保障计划永久化",
+    summary: "爱尔兰政府宣布从2026年起永久实施创意工作者基本收入计划，为2000名艺术家每周提供325欧元资助，为期三年，支持艺术创作事业。",
+    source: "Happiful · 2025",
+    comment: "当一个国家守护艺术家的梦想，整个社会的灵魂都被照亮了。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+
+  // ---- 科技突破 ----
+  {
+    cat: "tech",
+    title: "CRISPR基因编辑首次为单个患者定制治疗方案",
+    summary: "蓝眼睛婴儿KJ Muldoon出生时患有罕见致命肝病，医生首次为他量身定制CRISPR基因编辑疗法成功稳定病情。他在度过了出生后全部住院生活后终于出院回家。FDA已加快审批类似疗法。",
+    source: "Greater Good · 2025",
+    comment: "生命科技的温度，在于让每一个独特的生命都有被治愈的可能。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "tech",
+    title: "亨廷顿舞蹈病历史上首次被成功治疗",
+    summary: "伦敦大学学院的基因疗法试验首次成功减缓亨廷顿舞蹈病进展达75%，这种遗传性神经退行性疾病影响着欧美约75000人。患者可能因此获得数十年高质量的额外生命。",
+    source: "Happiful / Greater Good · 2025",
+    comment: "75%的减缓，意味着无数家庭多了几十年相守的时光。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "tech",
+    title: "可再生能源首次超越煤炭成为全球最大电力来源",
+    summary: "2025年上半年，可再生能源历史性地取代煤炭成为全球最大电力来源。太阳能成为有史以来增长最快的电力来源，非洲多国也开始大规模进口太阳能板。",
+    source: "BBC / Greater Good · 2025",
+    comment: "清洁的阳光正在照亮全世界，能源革命的黎明已经到来。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "tech",
+    title: "西北大学工程师造出世界最小起搏器",
+    summary: "美国西北大学工程师创造了世界上最小的心脏起搏器，可通过注射器无创植入体内，特别适合先天性心脏缺陷的新生儿，不再需要时会自行溶解。",
+    source: "Happiful · 2025",
+    comment: "小到肉眼难见的装置，守护着最脆弱的小小心跳。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "tech",
+    title: "肺癌和胰腺癌疫苗进入临床试验阶段",
+    summary: "全球首个预防性肺癌疫苗开始试验；胰腺癌mRNA疫苗一期试验结果喜人，大多数患者产生强烈免疫反应。HPV疫苗已提前完成8600万女孩接种目标，预计可防止140万例死亡。",
+    source: "Greater Good · 2025",
+    comment: "从预防到治疗，人类正在赢得与癌症的这场持久战。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "tech",
+    title: "AI天气预报首次准确预测飓风路径，拯救大量生命",
+    summary: "2025年首次投入使用的AI辅助飓风预报准确预测了飓风Melissa的东北转向，为牙买加、古巴和巴哈马东部居民争取到宝贵的额外疏散时间。在印度，AI气象模型帮助农民调整了种植计划。",
+    source: "Greater Good / Nature · 2025",
+    comment: "当科技学会读懂风云，就能为更多人撑起一把保护伞。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "tech",
+    title: "科学家开发出可自愈裂缝的可持续混凝土",
+    summary: "德克萨斯A&M大学的科学家利用合成地衣，开发出一种完全可持续的混凝土自愈技术。混凝土是仅次于水的全球第二大使用材料，这项技术有望大幅延长建筑寿命并减少碳排放。",
+    source: "Happiful · 2025",
+    comment: "连混凝土都学会了自我修复，这是材料科学的一首浪漫诗。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+
+  // ---- 文化艺术 ----
+  {
+    cat: "culture",
+    title: "巴黎圣母院双塔在大火六年后重新向公众开放",
+    summary: "2019年毁灭性大火后，巴黎圣母院的两座中世纪塔楼在历经六年修复后重新向公众开放，标志着这座800年历史古迹浴火重生的重要里程碑。",
+    source: "Happiful · 2025",
+    comment: "八百年的石头会说话——它说，美好的事物终将回来。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "Ed Sheeran创立基金会支持英国音乐教育",
+    summary: "歌手Ed Sheeran成立教育基金会，目标为12000多名青少年改善音乐教育机会。基金会将提供乐器、创造演出机会、开辟行业通道，并倡导更多认识到音乐的\"变革力量\"。",
+    source: "Happiful · 2025",
+    comment: "一把吉他改变了他的人生，现在他要把这份改变传递给更多孩子。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "大规模公共艺术项目让动物木偶穿越两万公里",
+    summary: "从4月到8月，一个前所未有规模的公共艺术项目让等身大小的动物木偶从刚果盆地出发，穿越20000公里到达北极圈。用回收材料制成的长颈鹿、大象等木偶在街头吸引观众，呼吁关注气候变化对动物迁徙的影响。",
+    source: "Happiful · 2025",
+    comment: "当纸板变成长颈鹿，艺术就有了改变世界的力量。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "毛利族女性在去世近百年后获得牛津大学追授学位",
+    summary: "被认为是第一位在牛津大学就读的原住民毛利族女性Mākereti Papakura，在去世后近一个世纪终于获得了追授学位。当年她在交论文前几周不幸离世，如今正义终于到来。",
+    source: "Happiful · 2025",
+    comment: "迟到了一个世纪的学位证书，却是对知识与坚韧永恒的致敬。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "研究发现唱歌课程可有效治疗产后抑郁",
+    summary: "伦敦国王学院三年研究表明，专为新手妈妈设计的团体歌唱课程能有效缓解产后抑郁症状，且在课程结束六个月后症状仍持续改善。这为产后抑郁提供了一种accessible的辅助治疗方式。",
+    source: "British Journal of Psychiatry · 2025",
+    comment: "当妈妈们唱起歌来，旋律不仅治愈了情绪，也连接了彼此。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "二手服装市场蓬勃发展，增速达零售市场2.7倍",
+    summary: "ThredUp年度报告显示，二手服装市场正以普通零售市场2.7倍的速度增长，预计到2029年将达到2750亿英镑规模。越来越多人选择可持续时尚，让旧衣焕发新生。",
+    source: "ThredUp Resale Report · 2025",
+    comment: "每一件被再次穿上的衣服，都是对地球温柔的拥抱。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  },
+  {
+    cat: "culture",
+    title: "绿海龟从濒危物种名单中成功降级",
+    summary: "经过数十年的国际保护努力，包括捕猎禁令和巢穴保护措施，绿海龟数量自1970年代以来增长30%，被国际自然保护联盟重新分类为\"无危物种\"。同年另有20种动物保护等级下调。",
+    source: "Greater Good · 2025",
+    comment: "当人类愿意守护，大自然就会给出最美的回答。",
+    link: "https://greatergood.berkeley.edu/article/item/ten_inspiring_signs_of_progress_from_2025"
+  },
+  {
+    cat: "culture",
+    title: "巴西亚马逊雨林火灾减少65%，创监测以来最低",
+    summary: "在经历历史性干旱和严重野火后，巴西2025年亚马逊雨林火灾减少了65%，降至监测以来的最低水平。这得益于健康的降雨和当地社区的精心保护工作。",
+    source: "Happiful · 2025",
+    comment: "雨林在恢复呼吸，地球之肺正在被治愈。",
+    link: "https://happiful.com/32-good-news-stories-from-2025-you-might-have-missed"
+  }
+];
+
+// ===================== QUOTES =====================
+const quotes = [
+  {text:"这个世界上，总有人在悄悄爱着你。",author:""},
+  {text:"没有一个冬天不可逾越，没有一个春天不会来临。",author:""},
+  {text:"生活不是等待暴风雨过去，而是学会在雨中跳舞。",author:""},
+  {text:"你今天遇到的每一个人都在经历一场你一无所知的战斗，所以请温柔以待。",author:""},
+  {text:"世界上只有一种真正的英雄主义，那就是在认识生活的真相后依然热爱生活。",author:"——罗曼·罗兰"},
+  {text:"保持热爱，奔赴山海。",author:""},
+  {text:"一切都会好起来的，如果还没好，说明还没到最后。",author:""},
+  {text:"每一个不曾起舞的日子，都是对生命的辜负。",author:"——尼采"},
+  {text:"你不需要很厉害才能开始，但你需要开始才能变得厉害。",author:""},
+  {text:"在所有不被看好的日子里，别忘了抬头看看天空。",author:""}
+];
+
+const moodResponses = {
+  "开心": "太好了！愿这份快乐陪你到明天 ☀️",
+  "平静": "内心的宁静是最珍贵的礼物 🍃",
+  "感动": "被温暖触动的心，本身就很美好 💛",
+  "充满希望": "带着希望入眠，明天会更好 🌈"
+};
+
+// ===================== GREETING =====================
+function setGreeting() {
+  const h = new Date().getHours();
+  const el = {
+    icon: document.getElementById('greetingIcon'),
+    text: document.getElementById('greetingText'),
+    sub: document.getElementById('greetingSub')
+  };
+  if (h >= 5 && h < 12) {
+    el.icon.textContent = '🌅';
+    el.text.textContent = '早安，新的一天';
+    el.sub.textContent = '今天也有很多好消息在等你';
+  } else if (h >= 12 && h < 18) {
+    el.icon.textContent = '☀️';
+    el.text.textContent = '午安，辛苦了';
+    el.sub.textContent = '休息一下，看看世界的温柔吧';
+  } else {
+    el.icon.textContent = '🌙';
+    el.text.textContent = '晚安，今天辛苦了';
+    el.sub.textContent = '在好消息里结束美好的一天';
+  }
+}
+
+function setQuote() {
+  const q = quotes[Math.floor(Math.random() * quotes.length)];
+  document.getElementById('quoteText').textContent = q.text;
+  document.getElementById('quoteAuthor').textContent = q.author;
+}
+
+function setDate() {
+  const d = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  const str = `📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 · 星期${days[d.getDay()]}`;
+  document.getElementById('dateBadge').textContent = str;
+}
+
+// ===================== TABS & CARDS =====================
+let currentTab = 'all';
+let displayedNews = [];
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  renderCards();
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  let items = currentTab === 'all' ? displayedNews : displayedNews.filter(n => n.cat === currentTab);
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🌸</div><p>暂无此类别的好消息，换个分类看看吧</p></div>`;
+    return;
+  }
+
+  const catLabels = { warmth: '🧡 暖心故事', tech: '🚀 科技突破', culture: '🎨 文化艺术' };
+
+  grid.innerHTML = items.map((n, i) => `
+    <article class="news-card" data-cat="${n.cat}" style="animation-delay:${i*0.06}s">
+      <span class="card-cat-badge">${catLabels[n.cat]}</span>
+      <h3 class="card-title">${n.title}</h3>
+      <p class="card-summary">${n.summary}</p>
+      <div class="card-comment">
+        <p>${n.comment}</p>
+      </div>
+      <div class="card-footer">
+        <span class="card-source">📰 ${n.source}</span>
+        <a class="card-link" href="${n.link}" target="_blank" rel="noopener">阅读原文 →</a>
+      </div>
+    </article>
+  `).join('');
+}
+
+// ===================== RSS FETCH =====================
+async function fetchRSS() {
+  const indicator = document.getElementById('sourceIndicator');
+  const feeds = [
+    'https://www.goodnewsnetwork.org/feed/',
+    'https://www.positive.news/feed/'
+  ];
+
+  try {
+    const results = await Promise.allSettled(
+      feeds.map(feed =>
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&count=6`)
+          .then(r => r.json())
+      )
+    );
+
+    let rssItems = [];
+    results.forEach(r => {
+      if (r.status === 'fulfilled' && r.value && r.value.items) {
+        r.value.items.forEach(item => {
+          const positiveKeywords = /good|hope|breakthrough|save|heal|recover|success|happy|joy|love|kind|help|miracle|cure|discover|protect|celebrate|beautiful|inspiring|amazing|peace|rescue|volunteer/i;
+          if (positiveKeywords.test(item.title + ' ' + (item.description || ''))) {
+            const cat = categorizeNews(item.title + ' ' + (item.description || ''));
+            rssItems.push({
+              cat,
+              title: item.title,
+              summary: stripHtml(item.description || '').slice(0, 160) + '...',
+              source: item.author || extractDomain(item.link) || 'Good News',
+              comment: generateComment(cat),
+              link: item.link
+            });
+          }
+        });
+      }
+    });
+
+    if (rssItems.length > 0) {
+      const combined = shuffleArray([...allNews, ...rssItems.slice(0, 6)]);
+      displayedNews = combined;
+      indicator.innerHTML = '<span class="source-dot live"></span> 已连接实时好消息源';
+    } else {
+      displayedNews = shuffleArray([...allNews]);
+    }
+  } catch (e) {
+    displayedNews = shuffleArray([...allNews]);
+  }
+
+  renderCards();
+}
+
+function categorizeNews(text) {
+  const t = text.toLowerCase();
+  const techWords = /tech|science|research|discover|ai|robot|space|energy|solar|quantum|gene|vaccine|medical|brain|crispr|nasa|engineer|battery|electric|drug|therapy|cancer|cure/;
+  const cultureWords = /art|music|museum|film|festival|dance|paint|heritage|cultur|book|theater|photograph|design|fashion|literature|poetry|architect/;
+  if (techWords.test(t)) return 'tech';
+  if (cultureWords.test(t)) return 'culture';
+  return 'warmth';
+}
+
+function generateComment(cat) {
+  const comments = {
+    warmth: ["世界因善意而闪闪发光。","每一份温暖都值得被看见。","爱在传递中变得更加强大。"],
+    tech: ["科技的力量正在让不可能变为可能。","人类的智慧永远值得期待。","每一次突破都在重塑未来。"],
+    culture: ["美好的创造让生活充满意义。","艺术是灵魂深处的光。","文化是人类最温柔的力量。"]
+  };
+  const arr = comments[cat] || comments.warmth;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
+function extractDomain(url) {
+  try { return new URL(url).hostname.replace('www.',''); } catch { return ''; }
+}
+
+// ===================== MOOD =====================
+function selectMood(btn, mood) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const thanks = document.getElementById('moodThanks');
+  thanks.textContent = moodResponses[mood];
+  thanks.classList.add('show');
+
+  // Save to localStorage
+  const today = new Date().toDateString();
+  localStorage.setItem('goodNewsLastMood', JSON.stringify({ date: today, mood }));
+}
+
+function restoreMood() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('goodNewsLastMood'));
+    if (saved && saved.date === new Date().toDateString()) {
+      const btns = document.querySelectorAll('.mood-btn');
+      btns.forEach(b => {
+        if (b.querySelector('.mood-label').textContent === saved.mood) {
+          b.classList.add('selected');
+          const thanks = document.getElementById('moodThanks');
+          thanks.textContent = moodResponses[saved.mood];
+          thanks.classList.add('show');
+        }
+      });
+    }
+  } catch {}
+}
+
+// ===================== REFRESH =====================
+function refreshNews() {
+  const fab = document.getElementById('fabRefresh');
+  fab.classList.add('spinning');
+  setTimeout(() => fab.classList.remove('spinning'), 800);
+
+  setQuote();
+  displayedNews = shuffleArray([...allNews]);
+  renderCards();
+
+  // Attempt live fetch in background
+  fetchRSS();
+}
+
+// ===================== SCROLL REVEAL =====================
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+}
+
+// ===================== NOTIFICATION SYSTEM =====================
+const NOTIF_STORAGE_KEY = 'goodNewsNotifSettings';
+const NOTIF_HISTORY_KEY = 'goodNewsNotifHistory';
+const NOTIF_LAST_PUSH_KEY = 'goodNewsLastPush';
+
+let notifSettings = {
+  browserEnabled: false,
+  inpageEnabled: true,
+  hour: 8,
+  min: 0
+};
+
+function loadNotifSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY));
+    if (saved) notifSettings = { ...notifSettings, ...saved };
+  } catch {}
+  // Reflect in UI
+  document.getElementById('toggleBrowser').checked = notifSettings.browserEnabled;
+  document.getElementById('toggleInpage').checked = notifSettings.inpageEnabled;
+  document.getElementById('notifHour').value = notifSettings.hour;
+  document.getElementById('notifMin').value = notifSettings.min;
+  updateBellDot();
+  updatePermStatus();
+}
+
+function saveNotifSettings() {
+  notifSettings.hour = parseInt(document.getElementById('notifHour').value);
+  notifSettings.min = parseInt(document.getElementById('notifMin').value);
+  localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notifSettings));
+  updateBellDot();
+  syncSettingsToSW();
+}
+
+// Sync settings to Service Worker so it can push in the background
+function syncSettingsToSW() {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'UPDATE_NOTIF_SETTINGS',
+      settings: notifSettings
+    });
+  }
+}
+
+function updateBellDot() {
+  const dot = document.getElementById('bellDot');
+  dot.classList.toggle('active', notifSettings.browserEnabled || notifSettings.inpageEnabled);
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  panel.classList.toggle('open');
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notifPanel');
+  const trigger = document.getElementById('notifTrigger');
+  if (panel.classList.contains('open') && !panel.contains(e.target) && !trigger.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+function handleBrowserToggle(checked) {
+  if (checked) {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        notifSettings.browserEnabled = true;
+        saveNotifSettings();
+        updatePermStatus();
+        showToast(getRandomNews(), '浏览器通知已开启，明天按时提醒你');
+      } else if (Notification.permission === 'denied') {
+        document.getElementById('toggleBrowser').checked = false;
+        notifSettings.browserEnabled = false;
+        saveNotifSettings();
+        updatePermStatus();
+      } else {
+        requestNotifPermission();
+      }
+    } else {
+      document.getElementById('toggleBrowser').checked = false;
+      notifSettings.browserEnabled = false;
+      saveNotifSettings();
+      updatePermStatus();
+    }
+  } else {
+    notifSettings.browserEnabled = false;
+    saveNotifSettings();
+    updatePermStatus();
+  }
+}
+
+function handleInpageToggle(checked) {
+  notifSettings.inpageEnabled = checked;
+  saveNotifSettings();
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    updatePermStatus();
+    return;
+  }
+  try {
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      notifSettings.browserEnabled = true;
+      document.getElementById('toggleBrowser').checked = true;
+      saveNotifSettings();
+      // Show a welcome notification
+      new Notification('每日好消息 🌅', {
+        body: '通知已开启！每天按时给你送来好消息。',
+        icon: './icon-192.png'
+      });
+    } else {
+      notifSettings.browserEnabled = false;
+      document.getElementById('toggleBrowser').checked = false;
+      saveNotifSettings();
+    }
+  } catch {
+    notifSettings.browserEnabled = false;
+    document.getElementById('toggleBrowser').checked = false;
+    saveNotifSettings();
+  }
+  updatePermStatus();
+}
+
+function updatePermStatus() {
+  const el = document.getElementById('notifPerm');
+  const text = document.getElementById('notifPermText');
+  const btn = document.getElementById('notifPermBtn');
+
+  if (!('Notification' in window)) {
+    el.className = 'notif-perm denied';
+    text.textContent = '你的浏览器不支持通知功能，但页面内通知仍然可用。';
+    btn.style.display = 'none';
+    return;
+  }
+
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    el.className = 'notif-perm granted';
+    text.textContent = `通知权限已开启。好消息会在每天 ${String(notifSettings.hour).padStart(2,'0')}:${String(notifSettings.min).padStart(2,'0')} 准时送达。`;
+    btn.style.display = 'none';
+  } else if (perm === 'denied') {
+    el.className = 'notif-perm denied';
+    text.textContent = '浏览器通知权限已被拒绝。请在浏览器设置中手动开启，或使用页面内通知。';
+    btn.style.display = 'none';
+  } else {
+    el.className = 'notif-perm default';
+    text.textContent = '开启浏览器通知后，即使你不在页面上也能收到好消息提醒。';
+    btn.style.display = notifSettings.browserEnabled ? 'none' : 'inline-block';
+  }
+}
+
+// ===================== IN-PAGE TOAST =====================
+function showToast(newsItem, subtitle) {
+  const container = document.getElementById('toastContainer');
+  const catIcons = { warmth: '🧡', tech: '🚀', culture: '🎨' };
+  const catLabels = { warmth: '暖心故事', tech: '科技突破', culture: '文化艺术' };
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <div class="toast-icon ${newsItem.cat}">${catIcons[newsItem.cat] || '✨'}</div>
+    <div class="toast-body">
+      <div class="toast-label">📣 ${subtitle || '每日好消息 · ' + (catLabels[newsItem.cat] || '')}</div>
+      <div class="toast-title">${newsItem.title}</div>
+      <div class="toast-comment">${newsItem.comment}</div>
+    </div>
+    <button class="toast-dismiss" onclick="dismissToast(this.parentElement)">✕</button>
+    <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+  `;
+  toast.addEventListener('click', (e) => {
+    if (e.target.classList.contains('toast-dismiss')) return;
+    if (newsItem.link) window.open(newsItem.link, '_blank');
+  });
+
+  container.appendChild(toast);
+
+  // Auto dismiss after 8s
+  setTimeout(() => dismissToast(toast), 8000);
+}
+
+function dismissToast(toast) {
+  if (!toast || toast.classList.contains('leaving')) return;
+  toast.classList.add('leaving');
+  setTimeout(() => toast.remove(), 400);
+}
+
+function getRandomNews() {
+  return allNews[Math.floor(Math.random() * allNews.length)];
+}
+
+// ===================== NOTIFICATION HISTORY =====================
+function getNotifHistory() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function addNotifHistory(newsItem) {
+  const history = getNotifHistory();
+  history.unshift({
+    title: newsItem.title,
+    comment: newsItem.comment,
+    cat: newsItem.cat,
+    time: new Date().toLocaleString('zh-CN')
+  });
+  // Keep last 10
+  if (history.length > 10) history.length = 10;
+  localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(history));
+  renderNotifHistory();
+}
+
+function renderNotifHistory() {
+  const list = document.getElementById('notifHistoryList');
+  const history = getNotifHistory();
+  if (history.length === 0) {
+    list.innerHTML = '<div class="notif-history-empty">还没有推送记录，明天见 :)</div>';
+    return;
+  }
+  const catIcons = { warmth: '🧡', tech: '🚀', culture: '🎨' };
+  list.innerHTML = history.map(h => `
+    <div class="notif-history-item">
+      ${catIcons[h.cat] || '✨'} ${h.title}
+      <div class="nhi-time">${h.time}</div>
+    </div>
+  `).join('');
+}
+
+// ===================== SCHEDULED PUSH =====================
+function checkAndPush() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+
+  if (h === notifSettings.hour && m === notifSettings.min) {
+    // Check if already pushed today
+    const todayKey = now.toDateString();
+    const lastPush = localStorage.getItem(NOTIF_LAST_PUSH_KEY);
+    if (lastPush === todayKey) return; // Already pushed today
+
+    // Mark as pushed
+    localStorage.setItem(NOTIF_LAST_PUSH_KEY, todayKey);
+
+    const news = getRandomNews();
+    const catLabels = { warmth: '暖心故事', tech: '科技突破', culture: '文化艺术' };
+
+    // Browser notification
+    if (notifSettings.browserEnabled && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const catEmojis = { warmth: '🧡', tech: '🚀', culture: '🎨' };
+        new Notification(`${catEmojis[news.cat] || '✨'} 每日好消息 · ${catLabels[news.cat] || ''}`, {
+          body: `${news.title}\n\n${news.comment}`,
+          icon: './icon-192.png',
+          tag: 'daily-good-news',
+          requireInteraction: true
+        });
+      } catch {}
+    }
+
+    // In-page toast
+    if (notifSettings.inpageEnabled) {
+      showToast(news);
+    }
+
+    // Save to history
+    addNotifHistory(news);
+  }
+}
+
+// Start the scheduler - check every 30 seconds
+let notifInterval = setInterval(checkAndPush, 30000);
+
+// Also show a welcome toast if first visit today
+function maybeShowWelcomeToast() {
+  const todayKey = new Date().toDateString();
+  const lastVisit = localStorage.getItem('goodNewsLastVisit');
+  localStorage.setItem('goodNewsLastVisit', todayKey);
+
+  if (lastVisit !== todayKey && notifSettings.inpageEnabled) {
+    // First visit today - show a welcome toast after loading
+    setTimeout(() => {
+      const news = getRandomNews();
+      showToast(news, '今日推荐 · 欢迎回来');
+    }, 3000);
+  }
+}
+
+// ===================== SERVICE WORKER REGISTRATION =====================
+let swRegistration = null;
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    swRegistration = await navigator.serviceWorker.register('./sw.js');
+    console.log('[SW] Registered:', swRegistration.scope);
+
+    // Wait for the SW to be ready, then sync settings
+    navigator.serviceWorker.ready.then(() => {
+      syncSettingsToSW();
+    });
+
+    // Listen for messages from the SW
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.type === 'NOTIFICATION_SENT') {
+        // SW sent a notification in the background - refresh history
+        renderNotifHistory();
+      }
+    });
+
+    // Handle SW updates
+    swRegistration.addEventListener('updatefound', () => {
+      const newWorker = swRegistration.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'activated') {
+          syncSettingsToSW();
+        }
+      });
+    });
+  } catch (err) {
+    console.log('[SW] Registration failed:', err);
+  }
+}
+
+function testNotification() {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIFICATION' });
+  } else {
+    // Fallback: show a direct notification
+    const news = getRandomNews();
+    const catEmojis = { warmth: '🧡', tech: '🚀', culture: '🎨' };
+    const catLabels = { warmth: '暖心故事', tech: '科技突破', culture: '文化艺术' };
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(`${catEmojis[news.cat]} 每日好消息 · ${catLabels[news.cat]}`, {
+        body: `${news.title}\n\n💬 ${news.comment}`,
+        icon: './icon-192.png'
+      });
+    }
+    showToast(news, '测试通知');
+  }
+}
+
+// ===================== INIT =====================
+function init() {
+  setGreeting();
+  setQuote();
+  setDate();
+
+  // Show loading then load content
+  displayedNews = shuffleArray([...allNews]);
+  renderCards();
+
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1800);
+
+  restoreMood();
+  initScrollReveal();
+
+  // Notification system
+  loadNotifSettings();
+  renderNotifHistory();
+  maybeShowWelcomeToast();
+
+  // Register Service Worker for PWA + background notifications
+  registerServiceWorker();
+
+  // Try to fetch live RSS in background
+  setTimeout(() => fetchRSS(), 2500);
+}
+
+// ===================== PWA INSTALL PROMPT =====================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'inline-block';
+});
+
+async function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const result = await deferredInstallPrompt.userChoice;
+  if (result.outcome === 'accepted') {
+    showToast(getRandomNews(), '应用已安装，每天好消息准时送达');
+    document.getElementById('installBtn').style.display = 'none';
+  }
+  deferredInstallPrompt = null;
+}
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
