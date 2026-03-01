@@ -867,7 +867,7 @@
       </button>
     </div>
     <div class="source-indicator" id="sourceIndicator">
-      <span class="source-dot cached"></span> 精选好消息
+      <span class="source-dot cached"></span> 10+ 好消息源接入中...
     </div>
     <div class="cards-grid" id="cardsGrid"></div>
   </section>
@@ -1205,54 +1205,232 @@ function renderCards() {
   `).join('');
 }
 
-// ===================== RSS FETCH =====================
+// ===================== MULTI-SOURCE NEWS FETCH =====================
+const NEWS_CACHE_KEY = 'goodNewsFetchCache';
+const NEWS_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+// --- RSS Sources (all positive news focused) ---
+const RSS_FEEDS = [
+  'https://www.goodnewsnetwork.org/feed/',
+  'https://www.positive.news/feed/',
+  'https://www.goodgoodgood.co/articles/rss.xml',
+  'https://reasonstobecheerful.world/feed/',
+  'https://www.yesmagazine.org/feed/',
+  'https://feeds.feedburner.com/SunnySkyz',
+  'https://www.optimistdaily.com/feed/',
+  'https://thebetterindia.com/feed/',
+  'https://www.upworthy.com/feeds/feed.rss',
+  'https://goodnewsshared.com/feed/'
+];
+
+// --- Multiple RSS-to-JSON proxy services (fallback chain) ---
+const RSS_PROXIES = [
+  (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=8`,
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+// --- Positive keyword filter (broader set) ---
+const POSITIVE_REGEX = /good|hope|breakthrough|save|heal|recover|success|happy|joy|love|kind|help|miracle|cure|discover|protect|celebrate|beautiful|inspiring|amazing|peace|rescue|volunteer|heartwarming|triumph|uplifting|compassion|generous|hero|progress|innovati|positiv|solution|sustainab|renew|restor|reviv|thrive|flourish|empower|gratitude|community|together|milestone|achievement|record|first.ever|historic/i;
+
+// --- Negative keyword filter (exclude depressing content) ---
+const NEGATIVE_REGEX = /kill|murder|die|death|dead|war|attack|bomb|shoot|terror|crisis|disaster|famine|crash|collapse|scandal|fraud|abuse|violen|victim|suffer|tragic|devastat|destro|threat|fear|anger|hate|grief|suicide|weapon|conflict|corrupt|arrest|prison|crime|assault|rape/i;
+
 async function fetchRSS() {
   const indicator = document.getElementById('sourceIndicator');
-  const feeds = [
-    'https://www.goodnewsnetwork.org/feed/',
-    'https://www.positive.news/feed/'
-  ];
+  indicator.innerHTML = '<span class="source-dot cached"></span> 正在获取最新好消息...';
 
-  try {
-    const results = await Promise.allSettled(
-      feeds.map(feed =>
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&count=6`)
-          .then(r => r.json())
-      )
-    );
-
-    let rssItems = [];
-    results.forEach(r => {
-      if (r.status === 'fulfilled' && r.value && r.value.items) {
-        r.value.items.forEach(item => {
-          const positiveKeywords = /good|hope|breakthrough|save|heal|recover|success|happy|joy|love|kind|help|miracle|cure|discover|protect|celebrate|beautiful|inspiring|amazing|peace|rescue|volunteer/i;
-          if (positiveKeywords.test(item.title + ' ' + (item.description || ''))) {
-            const cat = categorizeNews(item.title + ' ' + (item.description || ''));
-            rssItems.push({
-              cat,
-              title: item.title,
-              summary: stripHtml(item.description || '').slice(0, 160) + '...',
-              source: item.author || extractDomain(item.link) || 'Good News',
-              comment: generateComment(cat),
-              link: item.link
-            });
-          }
-        });
-      }
-    });
-
-    if (rssItems.length > 0) {
-      const combined = shuffleArray([...allNews, ...rssItems.slice(0, 6)]);
-      displayedNews = combined;
-      indicator.innerHTML = '<span class="source-dot live"></span> 已连接实时好消息源';
-    } else {
-      displayedNews = shuffleArray([...allNews]);
+  // Check cache first
+  const cached = getNewsCache();
+  if (cached && cached.items.length > 0) {
+    applyFetchedNews(cached.items, cached.liveCount);
+    indicator.innerHTML = `<span class="source-dot live"></span> 已更新 · ${cached.liveCount} 条实时好消息`;
+    // Still try to refresh in background if cache is > 1 hour old
+    if (Date.now() - cached.time > 60 * 60 * 1000) {
+      fetchAllSourcesInBackground();
     }
-  } catch (e) {
-    displayedNews = shuffleArray([...allNews]);
+    return;
   }
 
+  // No valid cache, fetch fresh
+  await fetchAllSourcesInBackground();
+}
+
+async function fetchAllSourcesInBackground() {
+  const indicator = document.getElementById('sourceIndicator');
+  let allFetchedItems = [];
+  let successCount = 0;
+
+  // --- Strategy 1: RSS feeds via rss2json ---
+  const rssPromises = RSS_FEEDS.map(async (feedUrl) => {
+    try {
+      const proxyUrl = RSS_PROXIES[0](feedUrl);
+      const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      const data = await resp.json();
+      if (data && data.items && data.items.length > 0) {
+        const items = data.items
+          .filter(item => {
+            const text = (item.title || '') + ' ' + (item.description || '');
+            return POSITIVE_REGEX.test(text) && !NEGATIVE_REGEX.test(text);
+          })
+          .map(item => ({
+            cat: categorizeNews((item.title || '') + ' ' + (item.description || '')),
+            title: item.title || '',
+            summary: stripHtml(item.description || '').slice(0, 180),
+            source: item.author || extractDomain(item.link) || extractDomain(feedUrl),
+            comment: '',
+            link: item.link || '',
+            pubDate: item.pubDate || ''
+          }));
+        if (items.length > 0) successCount++;
+        return items;
+      }
+    } catch {}
+    return [];
+  });
+
+  // --- Strategy 2: GNews API (free, 100 req/day, no CORS on production) ---
+  const gnewsPromises = [
+    fetchGNews('good news'),
+    fetchGNews('breakthrough OR inspiring'),
+    fetchGNews('heartwarming OR hope'),
+  ];
+
+  // Run all in parallel with timeout
+  try {
+    const allResults = await Promise.allSettled([...rssPromises, ...gnewsPromises]);
+    allResults.forEach(r => {
+      if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+        allFetchedItems.push(...r.value);
+      }
+    });
+  } catch {}
+
+  // Deduplicate by title similarity
+  allFetchedItems = deduplicateNews(allFetchedItems);
+
+  // Generate comments for items that don't have one
+  allFetchedItems.forEach(item => {
+    if (!item.comment) item.comment = generateComment(item.cat);
+    if (!item.summary || item.summary.length < 10) {
+      item.summary = item.title;
+    }
+  });
+
+  // Sort by date (newest first) then shuffle within same day
+  allFetchedItems.sort((a, b) => {
+    if (a.pubDate && b.pubDate) return new Date(b.pubDate) - new Date(a.pubDate);
+    return 0;
+  });
+
+  if (allFetchedItems.length > 0) {
+    // Cache the results
+    setNewsCache(allFetchedItems, successCount);
+    applyFetchedNews(allFetchedItems, allFetchedItems.length);
+    indicator.innerHTML = `<span class="source-dot live"></span> 已连接 ${successCount} 个好消息源 · ${allFetchedItems.length} 条实时好消息`;
+  } else {
+    // All fetches failed, use built-in data
+    displayedNews = getDailyRotation(allNews);
+    renderCards();
+    indicator.innerHTML = '<span class="source-dot cached"></span> 精选好消息（网络源暂不可用）';
+  }
+}
+
+async function fetchGNews(query) {
+  try {
+    // GNews free tier - works on localhost, may have CORS issues on production
+    const resp = await fetch(
+      `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=5&sortby=publishedAt&apikey=free`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    if (data && data.articles) {
+      return data.articles
+        .filter(a => {
+          const text = (a.title || '') + ' ' + (a.description || '');
+          return !NEGATIVE_REGEX.test(text);
+        })
+        .map(a => ({
+          cat: categorizeNews((a.title || '') + ' ' + (a.description || '')),
+          title: a.title || '',
+          summary: (a.description || '').slice(0, 180),
+          source: a.source?.name || 'GNews',
+          comment: '',
+          link: a.url || '',
+          pubDate: a.publishedAt || ''
+        }));
+    }
+  } catch {}
+  return [];
+}
+
+function applyFetchedNews(fetchedItems, liveCount) {
+  // Mix fetched news with built-in, prioritizing fresh content
+  // Use daily rotation for built-in news to ensure variety
+  const rotatedBuiltIn = getDailyRotation(allNews);
+  const maxFetched = Math.min(fetchedItems.length, 12);
+  const maxBuiltIn = Math.max(6, 21 - maxFetched);
+
+  const combined = [
+    ...fetchedItems.slice(0, maxFetched),
+    ...rotatedBuiltIn.slice(0, maxBuiltIn)
+  ];
+  displayedNews = shuffleArray(combined);
   renderCards();
+}
+
+// --- Daily rotation: use date as seed to show different built-in news each day ---
+function getDailyRotation(items) {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  // Seeded shuffle
+  const arr = [...items];
+  let s = seed;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const j = s % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// --- Deduplication by title similarity ---
+function deduplicateNews(items) {
+  const seen = new Set();
+  return items.filter(item => {
+    // Normalize title for comparison
+    const key = item.title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '').slice(0, 40);
+    if (key.length < 5) return false; // Skip empty titles
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// --- News cache in localStorage ---
+function getNewsCache() {
+  try {
+    const raw = localStorage.getItem(NEWS_CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // Check if cache is still valid (4 hours)
+    if (Date.now() - data.time > NEWS_CACHE_TTL) return null;
+    // Check if cache is from today (don't show yesterday's fetched news)
+    const cacheDate = new Date(data.time).toDateString();
+    const today = new Date().toDateString();
+    if (cacheDate !== today) return null;
+    return data;
+  } catch { return null; }
+}
+
+function setNewsCache(items, liveCount) {
+  try {
+    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({
+      items: items.slice(0, 30), // Keep max 30 items
+      liveCount,
+      time: Date.now()
+    }));
+  } catch {}
 }
 
 function categorizeNews(text) {
@@ -1266,9 +1444,42 @@ function categorizeNews(text) {
 
 function generateComment(cat) {
   const comments = {
-    warmth: ["世界因善意而闪闪发光。","每一份温暖都值得被看见。","爱在传递中变得更加强大。"],
-    tech: ["科技的力量正在让不可能变为可能。","人类的智慧永远值得期待。","每一次突破都在重塑未来。"],
-    culture: ["美好的创造让生活充满意义。","艺术是灵魂深处的光。","文化是人类最温柔的力量。"]
+    warmth: [
+      "世界因善意而闪闪发光。",
+      "每一份温暖都值得被看见。",
+      "爱在传递中变得更加强大。",
+      "善良是不需要翻译的语言。",
+      "这样的故事让人相信，美好一直都在。",
+      "温暖的力量总是在不经意间传递。",
+      "有人在默默守护这个世界。",
+      "善意的种子终会开出最美的花。",
+      "每一个微小的善举都在改变世界的温度。",
+      "这世界没那么糟，因为总有人在努力让它变好。"
+    ],
+    tech: [
+      "科技的力量正在让不可能变为可能。",
+      "人类的智慧永远值得期待。",
+      "每一次突破都在重塑未来。",
+      "科学的进步让明天更值得期待。",
+      "这是属于人类智慧的高光时刻。",
+      "技术的温度，在于它能帮到谁。",
+      "又一个里程碑，未来正在被重新定义。",
+      "创新的脚步从未停歇。",
+      "科技让我们离更好的世界又近了一步。",
+      "每一项发明的背后，都是对更好生活的渴望。"
+    ],
+    culture: [
+      "美好的创造让生活充满意义。",
+      "艺术是灵魂深处的光。",
+      "文化是人类最温柔的力量。",
+      "美，永远是治愈的良药。",
+      "创造力让这个世界永远不会无聊。",
+      "当人类创造美好，整个世界都在发光。",
+      "这是文明给我们最好的礼物。",
+      "每一次创作都是对生活的热爱宣言。",
+      "自然与文化的和谐，是最动人的风景。",
+      "传承与创新之间，藏着人类最深的浪漫。"
+    ]
   };
   const arr = comments[cat] || comments.warmth;
   return arr[Math.floor(Math.random() * arr.length)];
@@ -1321,10 +1532,13 @@ function refreshNews() {
   setTimeout(() => fab.classList.remove('spinning'), 800);
 
   setQuote();
-  displayedNews = shuffleArray([...allNews]);
+
+  // Clear cache to force a fresh fetch
+  localStorage.removeItem(NEWS_CACHE_KEY);
+  displayedNews = getDailyRotation(allNews);
   renderCards();
 
-  // Attempt live fetch in background
+  // Fetch fresh from all sources
   fetchRSS();
 }
 
@@ -1690,8 +1904,8 @@ function init() {
   setQuote();
   setDate();
 
-  // Show loading then load content
-  displayedNews = shuffleArray([...allNews]);
+  // Show loading then load content (daily rotation for variety)
+  displayedNews = getDailyRotation(allNews);
   renderCards();
 
   setTimeout(() => {
